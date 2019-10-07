@@ -1,4 +1,4 @@
-module bitbucket.com/teknoir/toe
+module github.com/tekn0ir/toe
 
 go 1.13
 

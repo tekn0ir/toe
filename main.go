@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bitbucket.com/teknoir/toe/iot"
 	"crypto/tls"
 	"crypto/x509"
 	"flag"
@@ -185,44 +184,44 @@ func signalHandler() {
 	os.Exit(0)
 }
 
-	//// Incoming
-	//opts.SetDefaultPublishHandler(func(client mqtt.Client, msg mqtt.Message) {
-	//	fmt.Printf("[handler] Topic: %v\n", msg.Topic())
-	//	fmt.Printf("[handler] Payload: %v\n", msg.Payload())
-	//})
-	//
-	//log.Println("[main] mqtt Client Connecting")
-	//client := mqtt.NewClient(opts)
-	//if token := client.Connect(); token.Wait() && token.Error() != nil {
-	//	log.Fatal(token.Error())
-	//}
-	//
-	//topic := struct {
-	//	config    string
-	//	telemetry string
-	//}{
-	//	config:    fmt.Sprintf("/devices/%v/config", *deviceID),
-	//	telemetry: fmt.Sprintf("/devices/%v/events", *deviceID),
-	//}
-	//
-	//log.Println("[main] Creating Subscription")
-	//client.Subscribe(topic.config, 0, nil)
-	//
-	//log.Println("[main] Publishing Messages")
-	//for i := 0; i < 10; i++ {
-	//	log.Printf("[main] Publishing Message #%d", i)
-	//	token := client.Publish(
-	//		topic.telemetry,
-	//		0,
-	//		false,
-	//		fmt.Sprintf("Message: %d", i))
-	//	token.WaitTimeout(5 * time.Second)
-	//}
-	//
-	//log.Println("[main] mqtt Client Disconnecting")
-	//client.Disconnect(250)
-	//
-	//log.Println("[main] Done")
+//// Incoming
+//opts.SetDefaultPublishHandler(func(client mqtt.Client, msg mqtt.Message) {
+//	fmt.Printf("[handler] Topic: %v\n", msg.Topic())
+//	fmt.Printf("[handler] Payload: %v\n", msg.Payload())
+//})
+//
+//log.Println("[main] mqtt Client Connecting")
+//client := mqtt.NewClient(opts)
+//if token := client.Connect(); token.Wait() && token.Error() != nil {
+//	log.Fatal(token.Error())
+//}
+//
+//topic := struct {
+//	config    string
+//	telemetry string
+//}{
+//	config:    fmt.Sprintf("/devices/%v/config", *deviceID),
+//	telemetry: fmt.Sprintf("/devices/%v/events", *deviceID),
+//}
+//
+//log.Println("[main] Creating Subscription")
+//client.Subscribe(topic.config, 0, nil)
+//
+//log.Println("[main] Publishing Messages")
+//for i := 0; i < 10; i++ {
+//	log.Printf("[main] Publishing Message #%d", i)
+//	token := client.Publish(
+//		topic.telemetry,
+//		0,
+//		false,
+//		fmt.Sprintf("Message: %d", i))
+//	token.WaitTimeout(5 * time.Second)
+//}
+//
+//log.Println("[main] mqtt Client Disconnecting")
+//client.Disconnect(250)
+//
+//log.Println("[main] Done")
 //}
 
 //package main
