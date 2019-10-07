@@ -49,7 +49,7 @@ var (
 	}
 	projectID  = flag.String("project", getEnv("TOE_PROJECT", "no-default-project-id"), "GCP Project ID")
 	registryID = flag.String("registry", getEnv("TOE_IOT_REGISTRY", "no-default-registry-id"), "Cloud IoT Registry ID (short form)")
-	region     = flag.String("region", getEnv("TOE_REGION", "us-central-1"), "GCP Region")
+	region     = flag.String("region", getEnv("TOE_REGION", "us-central1"), "GCP Region")
 	certsCA    = flag.String("ca_certs", getEnv("TOE_CA_CERT", "no-default-ca-cert"), "Download https://pki.google.com/roots.pem")
 	privateKey = flag.String("private_key", getEnv("TOE_PRIVATE_KEY", "no-default-private-key"), "Path to private key file")
 )
@@ -130,7 +130,7 @@ func main() {
 	log.Println("[main] Creating Handler to Subscribe on Connection")
 	opts.SetOnConnectHandler(func(cli mqtt.Client) {
 		{
-			token := cli.Subscribe(fmt.Sprintf(iot.TopicFormat, deviceID, "config"), qosAtLeastOnce, func(client mqtt.Client, msg mqtt.Message) {
+			token := cli.Subscribe(fmt.Sprintf(iot.TopicFormat, *deviceID, "config"), qosAtLeastOnce, func(client mqtt.Client, msg mqtt.Message) {
 				log.Printf("[config] topic: %s, payload: %s\n", msg.Topic(), string(msg.Payload()))
 			})
 			if token.Wait() && token.Error() != nil {
@@ -138,7 +138,7 @@ func main() {
 			}
 		}
 		{
-			token := cli.Subscribe(fmt.Sprintf(iot.TopicFormat, deviceID, "state"), qosAtLeastOnce, func(client mqtt.Client, msg mqtt.Message) {
+			token := cli.Subscribe(fmt.Sprintf(iot.TopicFormat, *deviceID, "state"), qosAtLeastOnce, func(client mqtt.Client, msg mqtt.Message) {
 				log.Printf("[state] topic: %s, payload: %s\n", msg.Topic(), string(msg.Payload()))
 			})
 			if token.Wait() && token.Error() != nil {
@@ -147,7 +147,7 @@ func main() {
 		}
 		{
 			// https://cloud.google.com/iot/docs/how-tos/commands?hl=ja
-			token := cli.Subscribe(fmt.Sprintf(iot.TopicFormat, deviceID, "commands")+"/#", qosAtLeastOnce, func(client mqtt.Client, msg mqtt.Message) {
+			token := cli.Subscribe(fmt.Sprintf(iot.TopicFormat, *deviceID, "commands")+"/#", qosAtLeastOnce, func(client mqtt.Client, msg mqtt.Message) {
 				log.Printf("[commands] topic: %s, payload: %s\n", msg.Topic(), string(msg.Payload()))
 			})
 			if token.Wait() && token.Error() != nil {
@@ -162,14 +162,14 @@ func main() {
 	defer cli.Disconnect(250)
 
 	log.Println("[main] MQTT Connected!")
-	c.UpdateState(deviceID, "started")
-	defer c.UpdateState(deviceID, "stopped")
+	c.UpdateState(*deviceID, "started")
+	defer c.UpdateState(*deviceID, "stopped")
 
-	c.PublishEvent(deviceID, "button")
+	c.PublishEvent(*deviceID, "button")
 
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
-	go c.HeartBeat(deviceID, ticker)
+	go c.HeartBeat(*deviceID, ticker)
 
 	signalHandler()
 }

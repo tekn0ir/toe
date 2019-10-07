@@ -6,7 +6,6 @@ import (
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/tekn0ir/toe/iot"
 )
 
 const (
@@ -52,7 +51,7 @@ func (c *cloudIotClient) Client() mqtt.Client {
 
 func (c *cloudIotClient) HeartBeat(deviceID string, ticker *time.Ticker) {
 	for t := range ticker.C {
-		log.Println("timestamp", t)
+		log.Println("[heartbeat] timestamp", t)
 		c.UpdateState(deviceID, "heartBeat")
 	}
 }
