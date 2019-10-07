@@ -1,4 +1,4 @@
-package ok3strate
+package ork3strate
 
 import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
