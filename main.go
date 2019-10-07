@@ -15,6 +15,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/tekn0ir/toe/iot"
+	"github.com/tekn0ir/toe/ork3strate"
 )
 
 const (
@@ -130,9 +131,7 @@ func main() {
 	log.Println("[main] Creating Handler to Subscribe on Connection")
 	opts.SetOnConnectHandler(func(cli mqtt.Client) {
 		{
-			token := cli.Subscribe(fmt.Sprintf(iot.TopicFormat, *deviceID, "config"), qosAtLeastOnce, func(client mqtt.Client, msg mqtt.Message) {
-				log.Printf("[config] topic: %s, payload: %s\n", msg.Topic(), string(msg.Payload()))
-			})
+			token := cli.Subscribe(fmt.Sprintf(iot.TopicFormat, *deviceID, "config"), qosAtLeastOnce, ork3strate.onConfigReceived)
 			if token.Wait() && token.Error() != nil {
 				log.Fatal(token.Error())
 			}

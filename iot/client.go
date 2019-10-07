@@ -60,6 +60,7 @@ func (c *cloudIotClient) UpdateState(deviceID, state string) error {
 	topic := fmt.Sprintf(TopicFormat, deviceID, "state")
 	token := c.client.Publish(topic, QosAtLeastOnce, false, state)
 	if token.Wait() && token.Error() != nil {
+		log.Fatal(token.Error())
 		return token.Error()
 	}
 	return nil
@@ -69,6 +70,7 @@ func (c *cloudIotClient) PublishEvent(deviceID, eventName string) error {
 	topic := fmt.Sprintf(TopicFormat, deviceID, "events/"+eventName)
 	token := c.client.Publish(topic, QosAtLeastOnce, false, "on")
 	if token.Wait() && token.Error() != nil {
+		log.Fatal(token.Error())
 		return token.Error()
 	}
 	return nil
