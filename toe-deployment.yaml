@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: toe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: toe
+  template:
+    metadata:
+      labels:
+        app: toe
+    spec:
+      serviceAccountName: toe
+      containers:
+      - name: toe
+        image: tekn0ir/toe:latest
+        imagePullPolicy: Always
+        env:
+        - name: TOE_PROJECT
+          value: "teknoir-poc"
+        - name: TOE_IOT_REGISTRY
+          value: "teknoir-iot-registry-poc"
+        - name: TOE_DEVICE
+          value: "go_client_test"
+        - name: TOE_CA_CERT
+          value: "/toe_conf/roots.pem"
+        - name: TOE_PRIVATE_KEY
+          value: "/toe_conf/demo_private.pem"
+        volumeMounts:
+        - mountPath: /toe_conf
+          name: toe-volume
+      volumes:
+      - name: toe-volume
+        hostPath:
+          # directory location on host
+          path: /home/pi/toe_conf
+

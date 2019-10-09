@@ -1,11 +1,11 @@
-FROM golang:1.13 as builder
-WORKDIR /go/src/bitbucket.com/teknoir/toe
+FROM balenalib/raspberrypi3-alpine-golang:1.12 as builder
+RUN [ "cross-build-start" ]
+WORKDIR /go/src/github.com/tekn0ir/toe
 COPY . .
-RUN CGO_ENABLED=0 go build -o toe -a -ldflags '-extldflags "-static"' .
+RUN GO111MODULE=on CGO_ENABLED=0 go build -o toe -a -ldflags '-extldflags "-static"' .
+RUN [ "cross-build-end" ]
 
-
-FROM alpine:3.8
+FROM balenalib/raspberrypi3-alpine:3.8 as toe
 WORKDIR /
-COPY --from=builder /go/src/bitbucket.com/teknoir/toe/toe .
-
-CMD ["/toe", "-project=${PROJECT_ID}", "-registry=${REGISTRY_ID}", "-device=${DEVICE_ID}", "-algorithm=${ALGORITHM}", "-ca_certs=${CA_CERTS}", "-private_key=${PRIVATE_KEY_FILE_PATH}"]
+COPY --from=builder /go/src/github.com/tekn0ir/toe/toe .
+CMD ["/toe"]

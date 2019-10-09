@@ -12,10 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/tekn0ir/toe/iot"
-	"github.com/tekn0ir/toe/ork3strate"
 )
 
 const (
@@ -53,6 +52,7 @@ var (
 	region     = flag.String("region", getEnv("TOE_REGION", "us-central1"), "GCP Region")
 	certsCA    = flag.String("ca_certs", getEnv("TOE_CA_CERT", "no-default-ca-cert"), "Download https://pki.google.com/roots.pem")
 	privateKey = flag.String("private_key", getEnv("TOE_PRIVATE_KEY", "no-default-private-key"), "Path to private key file")
+	kubeConfig = flag.String("kube_config", getEnv("KUBE_CONFIG", ""), "The path to the kubernetes config, or defaults to in cluster config")
 )
 
 func main() {
@@ -131,7 +131,7 @@ func main() {
 	log.Println("[main] Creating Handler to Subscribe on Connection")
 	opts.SetOnConnectHandler(func(cli mqtt.Client) {
 		{
-			token := cli.Subscribe(fmt.Sprintf(iot.TopicFormat, *deviceID, "config"), qosAtLeastOnce, ork3strate.onConfigReceived)
+			token := cli.Subscribe(fmt.Sprintf(iot.TopicFormat, *deviceID, "config"), qosAtLeastOnce, iot.OnConfigReceived)
 			if token.Wait() && token.Error() != nil {
 				log.Fatal(token.Error())
 			}
