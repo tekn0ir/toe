@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -66,6 +67,23 @@ var c iot.CloudIotClient
 var demuxEventHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	log.Printf("[demux] topic: %s, payload: %s\n", msg.Topic(), string(msg.Payload()))
 	c.PublishEvent(*deviceID, string(msg.Payload()))
+}
+var demuxClient mqtt.Client
+var onCommandReceived mqtt.MessageHandler = func(_ mqtt.Client, msg mqtt.Message) {
+	log.Printf("[commands] topic: %s, payload: %s\n", msg.Topic(), string(msg.Payload()))
+	if msg.Topic() == fmt.Sprintf("/devices/%s/commands", *deviceID) {
+		log.Printf("[commands] Command meant for toe: %s\n", string(msg.Payload()))
+	} else {
+		topicParts := strings.Split(msg.Topic(), "/")
+		if len(topicParts) >= 4 {
+			internalTopic := fmt.Sprintf("toe/%s", strings.Join(topicParts[3:], "/"))
+			log.Printf("[demux] Command forwarded to topic: %s: %s\n", internalTopic, string(msg.Payload()))
+			token := demuxClient.Publish(internalTopic, iot.QosAtLeastOnce, false, msg.Payload())
+			if token.Wait() && token.Error() != nil {
+				log.Println(token.Error())
+			}
+		}
+	}
 }
 
 func main() {
@@ -161,9 +179,7 @@ func main() {
 		}
 		{
 			// https://cloud.google.com/iot/docs/how-tos/commands?hl=ja
-			token := cli.Subscribe(fmt.Sprintf(iot.TopicFormat, *deviceID, "commands")+"/#", qosAtLeastOnce, func(client mqtt.Client, msg mqtt.Message) {
-				log.Printf("[commands] topic: %s, payload: %s\n", msg.Topic(), string(msg.Payload()))
-			})
+			token := cli.Subscribe(fmt.Sprintf(iot.TopicFormat, *deviceID, "commands")+"/#", qosAtLeastOnce, onCommandReceived)
 			if token.Wait() && token.Error() != nil {
 				log.Fatal(token.Error())
 			}
@@ -191,8 +207,8 @@ func main() {
 			log.Fatal(token.Error())
 		}
 	}
-	client := mqtt.NewClient(demuxOpts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
+	demuxClient = mqtt.NewClient(demuxOpts)
+	if token := demuxClient.Connect(); token.Wait() && token.Error() != nil {
 		log.Fatal(token.Error())
 	} else {
 		log.Printf("[demux] Connected to server")
