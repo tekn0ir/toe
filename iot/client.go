@@ -22,7 +22,7 @@ type CloudIotClient interface {
 	Client() mqtt.Client
 	HeartBeat(deviceID string, ticker *time.Ticker)
 	UpdateState(deviceID, state string) error
-	PublishEvent(deviceID, eventName string) error
+	PublishEvent(deviceID, payload string) error
 }
 
 type cloudIotClient struct {
@@ -66,9 +66,9 @@ func (c *cloudIotClient) UpdateState(deviceID, state string) error {
 	return nil
 }
 
-func (c *cloudIotClient) PublishEvent(deviceID, eventName string) error {
-	topic := fmt.Sprintf(TopicFormat, deviceID, "events/"+eventName)
-	token := c.client.Publish(topic, QosAtLeastOnce, false, "on")
+func (c *cloudIotClient) PublishEvent(deviceID, payload string) error {
+	topic := fmt.Sprintf(TopicFormat, deviceID, "events")
+	token := c.client.Publish(topic, QosAtLeastOnce, false, payload)
 	if token.Wait() && token.Error() != nil {
 		log.Println(token.Error())
 		return token.Error()

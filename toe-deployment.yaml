@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: toe
+  namespace: kube-system
 spec:
   replicas: 1
   selector:
@@ -36,4 +37,39 @@ spec:
         hostPath:
           # directory location on host
           path: /home/pi/toe_conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hmq
+  namespace: kube-system
+spec:
+  selector:
+    app: hmq
+  ports:
+    - protocol: TCP
+      port: 1883
+      targetPort: 1883
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hmq
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hmq
+  template:
+    metadata:
+      labels:
+        app: hmq
+    spec:
+      containers:
+        - name: toe
+          image: tekn0ir/hmq:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 1883
 
