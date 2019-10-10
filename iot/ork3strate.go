@@ -17,20 +17,31 @@ import (
 	"log"
 )
 
-func decodeDeploymentManifests(manifests [][]byte) (deps []appsv1.Deployment, err error) {
-	deployments := make([]appsv1.Deployment, len(manifests))
-	for i, manifest := range manifests {
-		dec := json.NewDecoder(bytes.NewReader(manifest))
-		err := dec.Decode(&deployments[i])
-		if err != nil {
-			return nil, err
-		}
+//func decodeDeploymentManifests(manifests [][]byte) (deps []appsv1.Deployment, err error) {
+//	deployments := make([]appsv1.Deployment, len(manifests))
+//	for i, manifest := range manifests {
+//		dec := json.NewDecoder(bytes.NewReader(manifest))
+//		err := dec.Decode(&deployments[i])
+//		if err != nil {
+//			return nil, err
+//		}
+//	}
+//	return deployments, nil
+//}
+
+func decodeDeploymentManifests(manifests []byte) (deps appsv1.DeploymentList, err error) {
+	var deployments appsv1.DeploymentList
+	dec := json.NewDecoder(bytes.NewReader(manifests))
+	err = dec.Decode(&deployments.Items)
+	if err != nil {
+		return deployments, err
 	}
 	return deployments, nil
 }
 
-func consolidateDeployments(deployments []appsv1.Deployment, currentDeployments *appsv1.DeploymentList, deploymentsClient v1.DeploymentInterface) {
-	for _, d := range deployments {
+//func consolidateDeployments(deployments []appsv1.Deployment, currentDeployments *appsv1.DeploymentList, deploymentsClient v1.DeploymentInterface) {
+func consolidateDeployments(deployments appsv1.DeploymentList, currentDeployments *appsv1.DeploymentList, deploymentsClient v1.DeploymentInterface) {
+	for _, d := range deployments.Items {
 		create := true
 		for _, e := range currentDeployments.Items {
 			if (d.ObjectMeta.Name == e.ObjectMeta.Name) {
@@ -51,7 +62,7 @@ func consolidateDeployments(deployments []appsv1.Deployment, currentDeployments 
 	}
 	for _, d := range currentDeployments.Items {
 		delete := true
-		for _, e := range deployments {
+		for _, e := range deployments.Items {
 			if (d.ObjectMeta.Name == e.ObjectMeta.Name) {
 				delete = false
 			}
@@ -102,9 +113,10 @@ func updateDeployment(deployment appsv1.Deployment, deploymentsClient v1.Deploym
 
 func OnConfigReceived(_ mqtt.Client, msg mqtt.Message) {
 	log.Printf("[ork3strate] topic: %s, payload: %s\n", msg.Topic(), string(msg.Payload()))
-	separator := []byte("---")
-	manifests := bytes.Split(msg.Payload(), separator)
-	deployments, err := decodeDeploymentManifests(manifests)
+	//separator := []byte("---")
+	//manifests := bytes.Split(msg.Payload(), separator)
+	//deployments, err := decodeDeploymentManifests(manifests)
+	deployments, err := decodeDeploymentManifests(msg.Payload())
 	if err != nil {
 		log.Println("[ork3strate] Warning:", err.Error())
 	} else {
