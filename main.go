@@ -12,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"encoding/json"
 
 	"github.com/dgrijalva/jwt-go"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -67,6 +68,15 @@ var c iot.CloudIotClient
 var demuxEventHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	log.Printf("[demux] topic: %s, payload: %s\n", msg.Topic(), string(msg.Payload()))
 	c.PublishEvent(*deviceID, string(msg.Payload()))
+}
+var demuxLocationHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
+	log.Printf("[demux] topic: %s, payload: %s\n", msg.Topic(), string(msg.Payload()))
+	var location iot.LocationMessage
+	err := json.Unmarshal(msg.Payload(), &location)
+	if err != nil {
+		log.Println("[demux] Error: ", err)
+	}
+	iot.StateMsg.Location = location.Location
 }
 var demuxClient mqtt.Client
 var onCommandReceived mqtt.MessageHandler = func(_ mqtt.Client, msg mqtt.Message) {
@@ -204,6 +214,9 @@ func main() {
 	demuxOpts := mqtt.NewClientOptions().AddBroker(demuxBroker).SetClientID("toe").SetCleanSession(true)
 	demuxOpts.OnConnect = func(c mqtt.Client) {
 		if token := c.Subscribe("toe/events", 0, demuxEventHandler); token.Wait() && token.Error() != nil {
+			log.Fatal(token.Error())
+		}
+		if token := c.Subscribe("toe/location", 0, demuxLocationHandler); token.Wait() && token.Error() != nil {
 			log.Fatal(token.Error())
 		}
 	}

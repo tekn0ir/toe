@@ -17,18 +17,6 @@ import (
 	"log"
 )
 
-//func decodeDeploymentManifests(manifests [][]byte) (deps []appsv1.Deployment, err error) {
-//	deployments := make([]appsv1.Deployment, len(manifests))
-//	for i, manifest := range manifests {
-//		dec := json.NewDecoder(bytes.NewReader(manifest))
-//		err := dec.Decode(&deployments[i])
-//		if err != nil {
-//			return nil, err
-//		}
-//	}
-//	return deployments, nil
-//}
-
 func decodeDeploymentManifests(manifests []byte) (deps appsv1.DeploymentList, err error) {
 	var deployments appsv1.DeploymentList
 	dec := json.NewDecoder(bytes.NewReader(manifests))
@@ -39,7 +27,6 @@ func decodeDeploymentManifests(manifests []byte) (deps appsv1.DeploymentList, er
 	return deployments, nil
 }
 
-//func consolidateDeployments(deployments []appsv1.Deployment, currentDeployments *appsv1.DeploymentList, deploymentsClient v1.DeploymentInterface) {
 func consolidateDeployments(deployments appsv1.DeploymentList, currentDeployments *appsv1.DeploymentList, deploymentsClient v1.DeploymentInterface) {
 	for _, d := range deployments.Items {
 		create := true
@@ -111,36 +98,60 @@ func updateDeployment(deployment appsv1.Deployment, deploymentsClient v1.Deploym
 	return nil
 }
 
+func getCurrentDeployments(deploymentsClient v1.DeploymentInterface) (*appsv1.DeploymentList, error) {
+	currentDeployments, err := deploymentsClient.List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for i, e := range currentDeployments.Items {
+		log.Printf("[ork3strate] Deployment #%d: %s\n", i, e.ObjectMeta.Name)
+	}
+	return currentDeployments, nil
+}
+
+func GetCurrentDeployments(pathToCfg string) (appsv1.DeploymentList, error) {
+	deploymentsClient, err := getDeploymentsClient(pathToCfg)
+	if err != nil {
+		return appsv1.DeploymentList{}, err
+	}	// List existing deployments in namespace
+	currentDeployments, err := getCurrentDeployments(deploymentsClient)
+	if err != nil {
+		return appsv1.DeploymentList{}, err
+	}
+	return *currentDeployments, nil
+}
+
 func OnConfigReceived(_ mqtt.Client, msg mqtt.Message) {
 	log.Printf("[ork3strate] topic: %s, payload: %s\n", msg.Topic(), string(msg.Payload()))
-	//separator := []byte("---")
-	//manifests := bytes.Split(msg.Payload(), separator)
-	//deployments, err := decodeDeploymentManifests(manifests)
 	deployments, err := decodeDeploymentManifests(msg.Payload())
 	if err != nil {
 		log.Println("[ork3strate] Warning:", err.Error())
 	} else {
 		log.Println("[ork3strate] Successfully decoded deployments")
 
-		clientset, err := getClient(flag.Lookup("kube_config").Value.(flag.Getter).Get().(string))
+		deploymentsClient, err := getDeploymentsClient(flag.Lookup("kube_config").Value.(flag.Getter).Get().(string))
 		if err != nil {
 			log.Println("[ork3strate] Warning:", err.Error())
 		} else {
-			deploymentsClient := clientset.AppsV1().Deployments(apiv1.NamespaceDefault)
-			log.Println("[ork3strate] Initialised k3s client")
-
 			// List existing deployments in namespace
-			currentDeployments, err := deploymentsClient.List(metav1.ListOptions{})
+			currentDeployments, err := getCurrentDeployments(deploymentsClient)
 			if err != nil {
 				log.Println("[ork3strate] Warning:", err.Error())
 			} else {
-				for i, e := range currentDeployments.Items {
-					log.Printf("[ork3strate] Deployment #%d: %s\n", i, e.ObjectMeta.Name)
-				}
+				consolidateDeployments(deployments, currentDeployments, deploymentsClient)
 			}
-			consolidateDeployments(deployments, currentDeployments, deploymentsClient)
 		}
 	}
+}
+
+func getDeploymentsClient(pathToCfg string) (v1.DeploymentInterface, error) {
+	clientset, err := getClient(pathToCfg)
+	if err != nil {
+		return nil, err
+	}
+	deploymentsClient := clientset.AppsV1().Deployments(apiv1.NamespaceDefault)
+	log.Println("[ork3strate] Initialised k3s client")
+	return deploymentsClient, nil
 }
 
 func getClient(pathToCfg string) (*kubernetes.Clientset, error) {

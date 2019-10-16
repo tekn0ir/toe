@@ -61,6 +61,8 @@ GO111MODULE=on CGO_ENABLED=0 go build -o toe -a -ldflags '-extldflags "-static"'
 ./toe -project=teknoir-poc -region=us-central1 -registry=teknoir-iot-registry-poc -device=go_client_test -ca_certs=roots.pem -private_key=./demo_private.pem
 
 
-
+## Run on localhost
+```bash
 docker run -it -p 1883:1883 -p 9001:9001 eclipse-mosquitto
-./toe -project=teknoir-poc -region=us-central1 -registry=teknoir-iot-registry-poc -device=go_client_test -ca_certs=roots.pem -private_key=./demo_private.pem -mqtt_broker_host=localhost
+./toe -project=teknoir-poc -region=us-central1 -registry=teknoir-iot-registry-poc -device=localhost -ca_certs=./devices/localhost/roots.pem -private_key=./devices/localhost/rsa_private.pem -mqtt_broker_host=localhost
+```
