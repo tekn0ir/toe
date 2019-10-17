@@ -60,9 +60,8 @@ func (c *cloudIotClient) HeartBeat(deviceID string, ticker *time.Ticker) {
 }
 
 type LocationStruct struct {
-	Latitude  float64 `json:"lat"`
-	Longitude float64 `json:"lng"`
-	Accuracy  int     `json:"accuracy"`
+	Lat      float64 `json:"lat"`
+	Lng      float64 `json:"lng"`
 }
 
 type LocationMessage struct {
@@ -76,9 +75,8 @@ type StateMessage struct {
 
 var StateMsg = StateMessage{
 	Location: LocationStruct{
-		Latitude: 29.7604,
-		Longitude: 95.3698,
-		Accuracy: 107,
+		Lat:      29.7604,
+		Lng:      95.3698,
 	},
 	Deployments: appsv1.DeploymentList{},
 }

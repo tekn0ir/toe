@@ -1,5 +1,5 @@
 # Teknoir Ork3stration Engine
-A small footpront IIoT device ork3strator.
+A small footprint IIoT device ork3strator.
 
 # TLDR;
 ```bash
@@ -25,6 +25,7 @@ mkdir devices/$DEVICE_ID
 openssl req -x509 -newkey rsa:2048 -keyout devices/$DEVICE_ID/rsa_private.pem -nodes -out devices/$DEVICE_ID/rsa_public.pem -subj "/CN=unused"
 curl https://pki.goog/roots.pem > devices/$DEVICE_ID/roots.pem
 ```
+
 ### Register device
 ```bash
 export DEVICE_ID=my_new_device
@@ -44,25 +45,14 @@ docker build -t tekn0ir/toe:latest .
 docker push tekn0ir/toe:latest
 ```
 
-
-
-
-
-
-
-
-
-https://medium.com/google-cloud/cloud-iot-step-by-step-connecting-raspberry-pi-python-2f27a2893ab5
-https://github.com/GoogleCloudPlatform/golang-samples/tree/master/iot
-https://github.com/GoogleCloudPlatform/golang-samples/blob/master/iotkit/helloworld/main.go
-
+## Build locally
+```bash
 GO111MODULE=on go test
 GO111MODULE=on CGO_ENABLED=0 go build -o toe -a -ldflags '-extldflags "-static"' .
-./toe -project=teknoir-poc -region=us-central1 -registry=teknoir-iot-registry-poc -device=go_client_test -ca_certs=roots.pem -private_key=./demo_private.pem
-
+```
 
 ## Run on localhost
 ```bash
 docker run -it -p 1883:1883 -p 9001:9001 eclipse-mosquitto
-./toe -project=teknoir-poc -region=us-central1 -registry=teknoir-iot-registry-poc -device=localhost -ca_certs=./devices/localhost/roots.pem -private_key=./devices/localhost/rsa_private.pem -mqtt_broker_host=localhost
+./toe -project=teknoir-poc -region=us-central1 -registry=teknoir-iot-registry-poc -device=localhost -ca_certs=./devices/localhost/roots.pem -private_key=./devices/localhost/rsa_private.pem -mqtt_broker_host=localhost -kube_config=${HOME}/.kube/config
 ```

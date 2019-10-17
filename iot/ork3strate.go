@@ -131,7 +131,7 @@ func OnConfigReceived(_ mqtt.Client, msg mqtt.Message) {
 
 		deploymentsClient, err := getDeploymentsClient(flag.Lookup("kube_config").Value.(flag.Getter).Get().(string))
 		if err != nil {
-			log.Println("[ork3strate] Warning:", err.Error())
+			log.Fatal("[ork3strate] Warning:", err.Error())
 		} else {
 			// List existing deployments in namespace
 			currentDeployments, err := getCurrentDeployments(deploymentsClient)
