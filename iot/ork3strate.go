@@ -10,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	v1 "k8s.io/client-go/kubernetes/typed/apps/v1"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -142,6 +143,39 @@ func OnConfigReceived(_ mqtt.Client, msg mqtt.Message) {
 			}
 		}
 	}
+}
+
+func getCurrentPods(podsClient corev1.PodInterface) (*apiv1.PodList, error) {
+	currentDeployments, err := podsClient.List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for i, e := range currentDeployments.Items {
+		log.Printf("[ork3strate] Pod #%d: %s\n", i, e.ObjectMeta.Name)
+	}
+	return currentDeployments, nil
+}
+
+func GetCurrentPods(pathToCfg string) (apiv1.PodList, error) {
+	podsClient, err := getPodsClient(pathToCfg)
+	if err != nil {
+		return apiv1.PodList{}, err
+	}	// List existing pods in namespace
+	currentPods, err := getCurrentPods(podsClient)
+	if err != nil {
+		return apiv1.PodList{}, err
+	}
+	return *currentPods, nil
+}
+
+func getPodsClient(pathToCfg string) (corev1.PodInterface, error) {
+	clientset, err := getClient(pathToCfg)
+	if err != nil {
+		return nil, err
+	}
+	podsClient := clientset.CoreV1().Pods(apiv1.NamespaceDefault)
+	log.Println("[ork3strate] Initialised k3s client")
+	return podsClient, nil
 }
 
 func getDeploymentsClient(pathToCfg string) (v1.DeploymentInterface, error) {

@@ -1,0 +1,127 @@
+[
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "name": "nginx-deployment"
+    },
+    "spec": {
+      "replicas": 1,
+      "selector": {
+        "matchLabels": {
+          "app": "nginx"
+        }
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app": "nginx"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "name": "nginx",
+              "image": "nginx:latest",
+              "ports": [
+                {
+                  "containerPort": 80
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "name": "iot-sense"
+    },
+    "spec": {
+      "replicas": 1,
+      "selector": {
+        "matchLabels": {
+          "app": "iot-sense"
+        }
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app": "iot-sense"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "name": "iot-sense",
+              "image": "tekn0ir/iot-sense-pod:latest",
+              "imagePullPolicy": "Always",
+              "securityContext": {
+                "privileged": true
+              },
+              "volumeMounts": [
+                {
+                  "mountPath": "/dev/i2c-1",
+                  "name": "i2c-device"
+                }
+              ]
+            }
+          ],
+          "volumes": [
+            {
+              "name": "i2c-device",
+              "hostPath": {
+                "path": "/dev/i2c-1",
+                "type": "CharDevice"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "name": "geolocation"
+    },
+    "spec": {
+      "replicas": 1,
+      "selector": {
+        "matchLabels": {
+          "app": "geolocation"
+        }
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app": "geolocation"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "name": "geolocation",
+              "image": "tekn0ir/geolocation:latest",
+              "imagePullPolicy": "Always",
+              "env": [
+                {
+                  "name": "UPDATE_INTERVAL",
+                  "value": "300"
+                },
+                {
+                  "name": "API_KEY",
+                  "value": "AIzaSyCTX0iZ08s7ZEDL6A7dURuElR0xeR0sqV8"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+]

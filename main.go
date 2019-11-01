@@ -9,12 +9,12 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
 	"encoding/json"
 
-	"github.com/dgrijalva/jwt-go"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/tekn0ir/toe/iot"
 )
@@ -62,6 +62,8 @@ var (
 		flag.String("mqtt_broker_host", getEnv("HMQ_SERVICE_HOST", "hmq"), "mqtt Broker Host"),
 		flag.String("mqtt_broker_port", getEnv("HMQ_SERVICE_PORT", "1883"), "mqtt Broker Port"),
 	}
+	defaultHeartbeatInterval, _ = strconv.Atoi(getEnv("HEARTBEAT_INTERVAL", "60"))
+	heartbeatInterval   		= flag.Int("heartbeat_interval", defaultHeartbeatInterval, "Seconds between state update")
 )
 
 var c iot.CloudIotClient
@@ -76,13 +78,25 @@ var demuxLocationHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt
 	if err != nil {
 		log.Println("[demux] Error: ", err)
 	}
+	iot.ClientMutex.Lock()
+	defer iot.ClientMutex.Unlock()
 	iot.StateMsg.Location = location.Location
+	iot.StateMsg.Accuracy = location.Accuracy
 }
 var demuxClient mqtt.Client
 var onCommandReceived mqtt.MessageHandler = func(_ mqtt.Client, msg mqtt.Message) {
 	log.Printf("[commands] topic: %s, payload: %s\n", msg.Topic(), string(msg.Payload()))
 	if msg.Topic() == fmt.Sprintf("/devices/%s/commands", *deviceID) {
 		log.Printf("[commands] Command meant for toe: %s\n", string(msg.Payload()))
+		var command iot.CommandStruct
+		err := json.Unmarshal(msg.Payload(), &command)
+		if err != nil {
+			log.Println("[command] Error: ", err)
+		}
+		if command.Command == "update" {
+			log.Printf("[commands] Got update command, restarting...")
+			os.Exit(0)
+		}
 	} else {
 		topicParts := strings.Split(msg.Topic(), "/")
 		if len(topicParts) >= 4 {
@@ -144,33 +158,6 @@ func main() {
 	opts.SetStore(mqtt.NewMemoryStore())
 	opts.SetUsername("unused")
 
-	token := jwt.New(jwt.SigningMethodRS256)
-	token.Claims = jwt.StandardClaims{
-		Audience:  *projectID,
-		IssuedAt:  time.Now().Unix(),
-		ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
-	}
-
-	log.Println("[main] Load Private Key")
-	keyBytes, err := ioutil.ReadFile(*privateKey)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Println("[main] Parse Private Key")
-	key, err := jwt.ParseRSAPrivateKeyFromPEM(keyBytes)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Println("[main] Sign String")
-	tokenString, err := token.SignedString(key)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	opts.SetPassword(tokenString)
-
 	log.Println("[main] Creating Handler to Subscribe on Connection")
 	opts.SetOnConnectHandler(func(cli mqtt.Client) {
 		{
@@ -197,17 +184,21 @@ func main() {
 	})
 
 	log.Println("[main] mqtt Client Connecting")
-	c = iot.NewCloudIotClient(opts)
-	cli := c.Client()
-	defer cli.Disconnect(250)
+	tokenDuration := 24 * time.Hour
+	c = iot.NewCloudIotClient(opts, *projectID, *privateKey, tokenDuration)
+	defer c.Disconnect(250)
 
 	log.Println("[main] MQTT Connected!")
 	c.UpdateState(*deviceID, "started")
 	defer c.UpdateState(*deviceID, "stopped")
 
-	ticker := time.NewTicker(time.Minute)
-	defer ticker.Stop()
-	go c.HeartBeat(*deviceID, ticker)
+	heartbeatTicker := time.NewTicker(time.Duration(*heartbeatInterval) * time.Second)
+	defer heartbeatTicker.Stop()
+	go c.HeartBeat(*deviceID, heartbeatTicker)
+
+	reauthTicker := time.NewTicker(tokenDuration)
+	defer reauthTicker.Stop()
+	go c.ReAuth(reauthTicker, opts, *projectID, *privateKey, tokenDuration - (10 * time.Minute))
 
 	// DEMUX
 	demuxBroker := fmt.Sprintf("tcp://%v:%v", *demuxBroker.host, *demuxBroker.port)

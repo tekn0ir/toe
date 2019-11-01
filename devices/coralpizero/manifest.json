@@ -1,0 +1,152 @@
+[
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "name": "edge-tpu-mobilenet"
+    },
+    "spec": {
+      "replicas": 1,
+      "selector": {
+        "matchLabels": {
+          "app": "edge-tpu-mobilenet"
+        }
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app": "edge-tpu-mobilenet"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "name": "edge-tpu-mobilenet",
+              "image": "tekn0ir/edge-tpu-mobilenet:latest",
+              "imagePullPolicy": "Always",
+              "securityContext": {
+                "privileged": true
+              },
+              "volumeMounts": [
+                {
+                  "mountPath": "/dev/bus/usb/001/003",
+                  "name": "coral-device"
+                },
+                {
+                  "mountPath": "/dev/vchiq",
+                  "name": "vchiq"
+                }
+              ]
+            }
+          ],
+          "volumes": [
+            {
+              "name": "coral-device",
+              "hostPath": {
+                "path": "/dev/bus/usb/001/003",
+                "type": "CharDevice"
+              }
+            },
+            {
+              "name": "vchiq",
+              "hostPath": {
+                "path": "/dev/vchiq",
+                "type": "CharDevice"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "name": "geolocation"
+    },
+    "spec": {
+      "replicas": 1,
+      "selector": {
+        "matchLabels": {
+          "app": "geolocation"
+        }
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app": "geolocation"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "name": "geolocation",
+              "image": "tekn0ir/geolocation:latest",
+              "imagePullPolicy": "Always",
+              "env": [
+                {
+                  "name": "UPDATE_INTERVAL",
+                  "value": "300"
+                },
+                {
+                  "name": "API_KEY",
+                  "value": "AIzaSyCTX0iZ08s7ZEDL6A7dURuElR0xeR0sqV8"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "name": "lcd-hat"
+    },
+    "spec": {
+      "replicas": 1,
+      "selector": {
+        "matchLabels": {
+          "app": "lcd-hat"
+        }
+      },
+      "template": {
+        "metadata": {
+          "labels": {
+            "app": "lcd-hat"
+          }
+        },
+        "spec": {
+          "containers": [
+            {
+              "name": "lcd-hat",
+              "image": "tekn0ir/lcd-hat:latest",
+              "imagePullPolicy": "Always",
+              "securityContext": {
+                "privileged": true
+              },
+              "volumeMounts": [
+                {
+                  "mountPath": "/dev/i2c-1",
+                  "name": "i2c-device"
+                }
+              ]
+            }
+          ],
+          "volumes": [
+            {
+              "name": "i2c-device",
+              "hostPath": {
+                "path": "/dev/i2c-1",
+                "type": "CharDevice"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+]

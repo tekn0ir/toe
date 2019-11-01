@@ -1,0 +1,16 @@
+image: tekn0ir/toe:latest
+manifests:
+  - image: tekn0ir/toe:amd64
+    platform:
+      architecture: amd64
+      os: linux
+  - image: tekn0ir/toe:arm32v7
+    platform:
+      architecture: arm
+      os: linux
+      variant: v7
+  - image: tekn0ir/toe:arm64v8
+    platform:
+      architecture: arm64
+      os: linux
+      variant: v8
